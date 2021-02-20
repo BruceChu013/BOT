@@ -1,40 +1,30 @@
+from __future__ import unicode_literals
 import os
-from datetime import datetime
-
-from flask import Flask, abort, request
-
-# https://github.com/line/line-bot-sdk-python
+from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
 app = Flask(__name__)
 
-line_bot_api = LineBotApi(os.environ.get("CHANNEL_ACCESS_TOKEN"))
-handler = WebhookHandler(os.environ.get("CHANNEL_SECRET"))
+# LINE 聊天機器人的基本資料
+line_bot_api = LineBotApi('pXjiePH6FQbZUb9HfySy7Z4N9UskbxR/oeqSyAhlpge9Ckev3im+gknVWbDlyhWqKqjwgrJtE4epbOqlGkgZaGXmzwxXuSH7Kx2hMzi4BINws6n0T4BD7lV6hlRdp4Hrhk9rhsDjOLYXA/yTS79zVAdB04t89/1O/w1cDnyilFU=
+')
+handler = WebhookHandler('10f166d1105c29a3c8e6cd43086d8cef')
 
-
-@app.route("/", methods=["GET", "POST"])
+# 接收 LINE 的資訊
+@app.route("/callback", methods=['POST'])
 def callback():
+    signature = request.headers['X-Line-Signature']
 
-    if request.method == "GET":
-        return "Hello Heroku"
-    if request.method == "POST":
-        signature = request.headers["X-Line-Signature"]
-        body = request.get_data(as_text=True)
+    body = request.get_data(as_text=True)
+    app.logger.info("Request body: " + body)
 
-        try:
-            handler.handle(body, signature)
-        except InvalidSignatureError:
-            abort(400)
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
 
-        return "OK"
+    return 'OK'
 
-
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    get_message = event.message.text
-
-    # Send To Line
-    reply = TextSendMessage(text=f"{get_message}")
-    line_bot_api.reply_message(event.reply_token, reply)
+if __name__ == "__main__":
+    app.run()
